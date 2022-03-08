@@ -12,6 +12,7 @@ db_password = ''
 db_name = ''
 db_table = ''
 db_host = ''
+photo_directory = ''
 
 
 get_recent_data = function() {
@@ -1896,7 +1897,7 @@ server <- function(input, output,session) {
   
   #picture ####
   output$farmpic = renderImage({
-    return(list(src = 'D:/files/photos/FarmAfternoon.jpg', contentType = 'image/jpg',width = '90%',height = '150%'))
+    return(list(src = photo_directory, contentType = 'image/jpg',width = '90%',height = '150%'))
   },deleteFile = F)
   
 }
