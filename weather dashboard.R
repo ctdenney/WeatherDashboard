@@ -4,15 +4,18 @@ library(tidyverse)
 library(lubridate)
 library(openair)
 library(RMySQL)
+library(magick)
+
+rain_corr = 1.255411
 
 Sys.setenv(tz = 'America/Los_Angeles')
-
-db_user = ''
-db_password = ''
-db_name = ''
-db_table = ''
-db_host = ''
-photo_directory = ''
+# print(getwd())
+credentials = read.csv('../credentials.csv')
+db_user = credentials[credentials$field == 'db_user',2]
+db_password = credentials[credentials$field == 'db_password',2]
+db_name = credentials[credentials$field == 'db_name',2]
+db_table = credentials[credentials$field == 'db_table',2]
+db_host = credentials[credentials$field == 'db_host',2]
 
 
 get_recent_data = function() {
@@ -27,17 +30,23 @@ get_recent_data = function() {
   on.exit(dbDisconnect(mydb))
   
   data = df %>%
-    filter(ID>6) %>%
+    filter(
+      ID>6,
+      SerialNumber %in% c(116,236)
+    ) %>%
     mutate(
       ts_GMT = force_tz(as_datetime(TimeStamp), tzone = 'GMT'),
       ts_PST = with_tz(ts_GMT, tzone = 'America/Los_Angeles'),
       TotalRain = case_when(
         ID <= 676 ~ 0,
+        ID >= 37254 & ID <=37269 & TotalRain != 355.8 ~ TotalRain + 355.8,
+        ID > 37269 ~ TotalRain + 355.8,
         T ~ TotalRain
       ),
       InstantRain = c(0,diff(TotalRain)),
       SunlightVisible = case_when(
         ts_PST < '2022-02-25' ~ as.numeric(NA),
+        SunlightVisible > 200000 ~ as.numeric(NA),
         T ~ SunlightVisible
       ),
       SunlightUVIndex = case_when(
@@ -62,7 +71,8 @@ ui = dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem('Current Conditions', tabName = 'conds', icon = icon('wind')),
-      menuItem('Detailed Plots', tabName = 'plots', icon = icon('chart-line'))
+      menuItem('Detailed Plots', tabName = 'plots', icon = icon('chart-line')),
+      menuItem('Time Lapse', tabName = 'images')
     ),
     dateRangeInput(
       'range','Date Range',start = NULL, end = NULL
@@ -85,7 +95,9 @@ ui = dashboardPage(
       selected = '5 minutes'
     ),
     checkboxInput('smooth','Show Trend Line?',FALSE),
-    sliderInput('smoothness','Level of smoothing',min = 0.02,max = 0.5, value = 0.05)
+    sliderInput('smoothness','Level of smoothing',min = 0.02,max = 0.5, value = 0.05),
+    checkboxInput('rain_correct', "Correct Rainfall?", FALSE),
+    checkboxInput('high_low', 'Show High/Low?', FALSE)
   ),
   dashboardBody(
     tabItems(
@@ -131,6 +143,17 @@ ui = dashboardPage(
             3,
             plotOutput('LightPlot'),
             plotOutput('WindRose')
+          )
+        )
+      ),
+      tabItem(
+        tabName = 'images',
+        fluidRow(
+          column(
+            6,
+            actionButton('gif','Make New Timelapse'),
+            imageOutput(outputId = 'timelapse'),
+            div(),div(),div()
           )
         )
       )
@@ -225,7 +248,12 @@ server <- function(input, output,session) {
           hour = hour(ts_PST), date = date(ts_PST)
         ) %>%
         group_by(date, hour) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
+        summarise(
+          min_ot = min(OutdoorTemperature), max_ot = max(OutdoorTemperature), 
+          min_it = min(IndoorTemperature), max_it = max(IndoorTemperature), 
+          ts_PST = first(ts_PST), 
+          OutdoorTemperature = mean(OutdoorTemperature), IndoorTemperature = mean(IndoorTemperature)
+        ) %>%
         data.frame()
       
       plot(
@@ -239,6 +267,19 @@ server <- function(input, output,session) {
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
         xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
       )
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_ot, rev(plot_df$max_ot)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_it, rev(plot_df$max_it)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
+        )
+      }
       legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("Outdoor Temperature",'Indoor Temperature'))
       mtext(side = 3, line = 2, text = 'Mean Hourly Temperature', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2, format = '%a %H')
@@ -286,23 +327,38 @@ server <- function(input, output,session) {
           date = date(ts_PST)
         ) %>%
         group_by(date) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
-        mutate(
-          datetime = format(date, format = '%b-%d')
+        summarise(
+          min_ot = min(OutdoorTemperature), max_ot = max(OutdoorTemperature), 
+          min_it = min(IndoorTemperature), max_it = max(IndoorTemperature), 
+          ts_PST = first(ts_PST), 
+          OutdoorTemperature = mean(OutdoorTemperature), IndoorTemperature = mean(IndoorTemperature)
         ) %>%
         data.frame()
       
       plot(
         plot_df$OutdoorTemperature~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = expression('Temp ('*degree*'C)'), type = 'b'
+        ylab = expression('Temp ('*degree*'C)')
       )
       par(new = T)
       plot(
-        plot_df$IndoorTemperature~plot_df$date,
+        plot_df$IndoorTemperature~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
+        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
       )
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_ot, rev(plot_df$max_ot)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_it, rev(plot_df$max_it)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
+        )
+      }
       legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("Outdoor Temperature",'Indoor Temperature'))
       mtext(side = 3, line = 2, text = 'Mean Daily Temperature', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -350,9 +406,13 @@ server <- function(input, output,session) {
           week = week(ts_PST), year = year(ts_PST)
         ) %>%
         group_by(year, week) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
-        mutate()
-      data.frame()
+        summarise(
+          min_ot = min(OutdoorTemperature), max_ot = max(OutdoorTemperature), 
+          min_it = min(IndoorTemperature), max_it = max(IndoorTemperature), 
+          ts_PST = first(ts_PST), 
+          OutdoorTemperature = mean(OutdoorTemperature), IndoorTemperature = mean(IndoorTemperature)
+        ) %>%
+        data.frame()
       
       plot(
         plot_df$OutdoorTemperature~plot_df$ts_PST,
@@ -365,6 +425,19 @@ server <- function(input, output,session) {
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
         xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
       )
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_ot, rev(plot_df$max_ot)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_it, rev(plot_df$max_it)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
+        )
+      }
       legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("Outdoor Temperature",'Indoor Temperature'))
       mtext(side = 3, line = 2, text = 'Mean Weekly Temperature', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -412,23 +485,38 @@ server <- function(input, output,session) {
           month = month(ts_PST), year = year(ts_PST)
         ) %>%
         group_by(year, month) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
-        mutate(
-          date = format(ts_PST, format = '%Y %b')
+        summarise(
+          min_ot = min(OutdoorTemperature), max_ot = max(OutdoorTemperature), 
+          min_it = min(IndoorTemperature), max_it = max(IndoorTemperature), 
+          ts_PST = first(ts_PST), 
+          OutdoorTemperature = mean(OutdoorTemperature), IndoorTemperature = mean(IndoorTemperature)
         ) %>%
         data.frame()
       
       plot(
         plot_df$OutdoorTemperature~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = expression('Temp ('*degree*'C)'), type = 'b'
+        ylab = expression('Temp ('*degree*'C)')
       )
       par(new = T)
       plot(
         plot_df$IndoorTemperature~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
+        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
       )
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_ot, rev(plot_df$max_ot)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_it, rev(plot_df$max_it)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
+        )
+      }
       legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("Outdoor Temperature",'Indoor Temperature'))
       mtext(side = 3, line = 2, text = 'Mean Monthly Temperature', cex = 1.5)
       axis.POSIXct(x = plot_df$datetime,side = 1, las = 2)
@@ -462,6 +550,7 @@ server <- function(input, output,session) {
         )
       }
     }
+   
   })
   
   #
@@ -481,6 +570,12 @@ server <- function(input, output,session) {
         ) %>%
         data.frame()
       zero_value = max(c(0, last(filter(recent_data()[,c('ts_PST','TotalRain','InstantRain')], ts_PST < first(plot_df$ts_PST))$TotalRain)), na.rm = T)
+      
+      if(input$rain_correct == T) {
+        plot_df$TotalRain = plot_df$TotalRain * rain_corr
+        plot_df$InstantRain = plot_df$InstantRain * rain_corr
+        zero_value = zero_value * rain_corr
+      }
       
       plot(
         I(plot_df$TotalRain-zero_value)~plot_df$ts_PST,
@@ -529,6 +624,12 @@ server <- function(input, output,session) {
         ) %>%
         data.frame()
       
+      if(input$rain_correct == T) {
+        # plot_df$TotalRain = plot_df$TotalRain * rain_corr
+        plot_df$InstantRain = plot_df$InstantRain * rain_corr
+        # zero_value = zero_value * rain_corr
+      }
+      
       b_rain = barplot(plot_df$InstantRain~plot_df$ts_PST, las = 2, ylab = 'mm', xlab = '', xaxt = 'n')
       mtext(side = 3, line = 2, text = 'Total Hourly Rainfall', cex = 1.5)
       axis(at = b_rain, labels = format(plot_df$ts_PST, format = '%a %H'),side = 1, las = 2)
@@ -559,6 +660,12 @@ server <- function(input, output,session) {
         ) %>%
         data.frame()
       
+      if(input$rain_correct == T) {
+        # plot_df$TotalRain = plot_df$TotalRain * rain_corr
+        plot_df$InstantRain = plot_df$InstantRain * rain_corr
+        # zero_value = zero_value * rain_corr
+      }
+      
       b_rain = barplot(plot_df$InstantRain, las = 2, ylab = 'mm', xlab = '')
       mtext(side = 3, line = 2, text = 'Total Daily Rainfall', cex = 1.5)
       axis(at = b_rain, labels = format(plot_df$ts_PST, format = '%b %a'),side = 1, las = 2)
@@ -585,6 +692,12 @@ server <- function(input, output,session) {
         group_by(year,week) %>%
         summarise(across(where(is.numeric), ~sum(.x)), ts_PST = first(ts_PST)) %>%
         data.frame()
+      
+      if(input$rain_correct == T) {
+        # plot_df$TotalRain = plot_df$TotalRain * rain_corr
+        plot_df$InstantRain = plot_df$InstantRain * rain_corr
+        # zero_value = zero_value * rain_corr
+      }
       
       b_rain = barplot(plot_df$InstantRain, las = 2, xlab = '', ylab = '', xaxt = 'n')
       mtext(side = 3, line = 2, text = 'Total Weekly Rainfall', cex = 1.5)
@@ -615,6 +728,12 @@ server <- function(input, output,session) {
           date = format(ts_PST, format = '%Y %b')
         ) %>%
         data.frame()
+      
+      if(input$rain_correct == T) {
+        # plot_df$TotalRain = plot_df$TotalRain * rain_corr
+        plot_df$InstantRain = plot_df$InstantRain * rain_corr
+        # zero_value = zero_value * rain_corr
+      }
       
       b_rain = barplot(plot_df$InstantRain, las = 2, xlab = '', ylab = '', xaxt = 'n')
       mtext(side = 3, line = 2, text = 'Total Monthly Rainfall', cex = 1.5)
@@ -703,7 +822,12 @@ server <- function(input, output,session) {
           hour = hour(ts_PST), date = date(ts_PST)
         ) %>%
         group_by(date, hour) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
+        summarise(
+          min_ih = min(IndoorHumidity), max_ih = max(IndoorHumidity), 
+          min_oh = min(OutdoorHumidity), max_oh = max(OutdoorHumidity),
+          IndoorHumidity = mean(IndoorHumidity), OutdoorHumidity = mean(OutdoorHumidity),
+          ts_PST = first(ts_PST)
+        ) %>%
         mutate(
           datetime = format(ts_PST, format = '%b-%d %H')
         ) %>%
@@ -720,6 +844,19 @@ server <- function(input, output,session) {
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
         xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
       )
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_oh, rev(plot_df$max_oh)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_ih, rev(plot_df$max_ih)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
+        )
+      }
       legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("Outdoor Humidity",'Indoor Humidity'))
       mtext(side = 3, line = 2, text = 'Hourly Mean Humidity', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2, format = '%a %H')
@@ -759,23 +896,41 @@ server <- function(input, output,session) {
           date = date(ts_PST)
         ) %>%
         group_by(date) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T))) %>%
+        summarise(
+          min_ih = min(IndoorHumidity), max_ih = max(IndoorHumidity), 
+          min_oh = min(OutdoorHumidity), max_oh = max(OutdoorHumidity),
+          IndoorHumidity = mean(IndoorHumidity), OutdoorHumidity = mean(OutdoorHumidity),
+          ts_PST = first(ts_PST)
+        ) %>%
         mutate(
-          datetime = format(date, format = '%b-%d')
+          datetime = format(ts_PST, format = '%b-%d %H')
         ) %>%
         data.frame()
       
       plot(
-        plot_df$OutdoorHumidity~plot_df$date,
+        plot_df$OutdoorHumidity~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = 'Relative %', xaxt = 'n', type = 'b'
+        ylab = 'Relative %', xaxt = 'n'
       )
       par(new = T)
       plot(
-        plot_df$IndoorHumidity~plot_df$date,
+        plot_df$IndoorHumidity~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
+        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
       )
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_oh, rev(plot_df$max_oh)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_ih, rev(plot_df$max_ih)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
+        )
+      }
       legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("Outdoor Humidity",'Indoor Humidity'))
       mtext(side = 3, line = 2, text = 'Weekly Mean Humidity', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2, format = '%b %a')
@@ -815,9 +970,14 @@ server <- function(input, output,session) {
           week = week(ts_PST), year = year(ts_PST)
         ) %>%
         group_by(year, week) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
+        summarise(
+          min_ih = min(IndoorHumidity), max_ih = max(IndoorHumidity), 
+          min_oh = min(OutdoorHumidity), max_oh = max(OutdoorHumidity),
+          IndoorHumidity = mean(IndoorHumidity), OutdoorHumidity = mean(OutdoorHumidity),
+          ts_PST = first(ts_PST)
+        ) %>%
         mutate(
-          year_week = paste(year, week)
+          datetime = format(ts_PST, format = '%b-%d %H')
         ) %>%
         data.frame()
       
@@ -832,6 +992,19 @@ server <- function(input, output,session) {
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
         xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
       )
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_oh, rev(plot_df$max_oh)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_ih, rev(plot_df$max_ih)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
+        )
+      }
       legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("Outdoor Humidity",'Indoor Humidity'))
       mtext(side = 3, line = 2, text = 'Humidity', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -871,23 +1044,41 @@ server <- function(input, output,session) {
           month = month(ts_PST), year = year(ts_PST)
         ) %>%
         group_by(year, month) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
+        summarise(
+          min_ih = min(IndoorHumidity), max_ih = max(IndoorHumidity), 
+          min_oh = min(OutdoorHumidity), max_oh = max(OutdoorHumidity),
+          IndoorHumidity = mean(IndoorHumidity), OutdoorHumidity = mean(OutdoorHumidity),
+          ts_PST = first(ts_PST)
+        ) %>%
         mutate(
-          datetime = format(ts_PST, format = '%Y %b')
+          datetime = format(ts_PST, format = '%b-%d %H')
         ) %>%
         data.frame()
       
       plot(
         plot_df$OutdoorHumidity~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = 'Relative %', xaxt = 'n', type = 'b'
+        ylab = 'Relative %', xaxt = 'n'
       )
       par(new = T)
       plot(
         plot_df$IndoorHumidity~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
+        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
       )
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_oh, rev(plot_df$max_oh)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_ih, rev(plot_df$max_ih)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
+        )
+      }
       legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("Outdoor Humidity",'Indoor Humidity'))
       mtext(side = 3, line = 2, text = 'Monthly Mean Humidity', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2, format = '%Y %b')
@@ -976,7 +1167,7 @@ server <- function(input, output,session) {
         lines(
           smooth.spline(
             x = plot_df[,'ts_PST'],
-            y = plot_df[,'SunlightUVIndex'],
+            y = plot_df[,'SunlightUVIndex']*5000,
             df = max(round(nrow(plot_df)*input$smoothness,0),2)
           ),
           col = 'red', lwd = 2
@@ -1030,7 +1221,7 @@ server <- function(input, output,session) {
         ) %>%
         data.frame()
       
-      barplot(plot_df$dur~plot_df$date, las = 2, xlab = '', ylab = 'Hours', main = 'Daylight Hours')
+      barplot(plot_df$dur~plot_df$date, las = 2, xlab = '', ylab = 'Hours', main = 'Daylight Hours', ylim = c(8, max(plot_df$dur)), xpd = F)
       
     }
   })
@@ -1578,12 +1769,6 @@ server <- function(input, output,session) {
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
         ylab = 'AQI'
       )
-      points(
-        plot_df$AQI24Average~plot_df$ts_PST,
-        las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
-      )
-      legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("AQI",'AQI 24 Hour Average'))
       mtext(side = 3, line = 2, text = 'Air Quality Index', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
       
@@ -1623,12 +1808,6 @@ server <- function(input, output,session) {
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
         ylab = 'AQI'
       )
-      points(
-        plot_df$AQI24Average~plot_df$ts_PST,
-        las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
-      )
-      legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("AQI",'AQI 24 Hour Average'))
       mtext(side = 3, line = 2, text = 'Mean Hourly Air Quality Index', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2, format = '%a %H')
       
@@ -1672,12 +1851,6 @@ server <- function(input, output,session) {
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
         ylab = 'AQI', type = 'b'
       )
-      lines(
-        plot_df$AQI24Average~plot_df$ts_PST,
-        las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
-      )
-      legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("AQI",'AQI 24 Hour Average'))
       mtext(side = 3, line = 2, text = 'Mean Daily Air Quality Index', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
       
@@ -1719,12 +1892,6 @@ server <- function(input, output,session) {
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
         ylab = 'AQI', type = 'b'
       )
-      lines(
-        plot_df$AQI24Average~plot_df$ts_PST,
-        las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
-      )
-      legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("AQI",'AQI 24 Hour Average'))
       mtext(side = 3, line = 2, text = 'Mean Weekly Air Quality Index', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
       
@@ -1767,12 +1934,6 @@ server <- function(input, output,session) {
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
         ylab = 'AQI', type = 'b'
       )
-      lines(
-        plot_df$AQI24Average~plot_df$ts_PST,
-        las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
-      )
-      legend('topleft',bty = 'n', pch = 20, col = c('black','blue'), legend = c("AQI",'AQI 24 Hour Average'))
       mtext(side = 3, line = 2, text = 'Mean Monthly Air Quality Index', cex = 1.5)
       axis.POSIXct(x = plot_df$datetime,side = 1, las = 2)
       
@@ -1791,45 +1952,47 @@ server <- function(input, output,session) {
     }
   })
   
-  output$CurrentConditions1 = renderTable({
-    
-    currentconditions = recent_data()[,colnames(df_local)] %>%
-      select(TotalRain,OutdoorTemperature,IndoorTemperature,OutdoorHumidity,IndoorHumidity) %>%
-      mutate(
-        InstantRain = c(0,diff(TotalRain)),
-        OutdoorTemperature = last(OutdoorTemperature),
-        IndoorTemperature = last(IndoorTemperature),
-        OutdoorHumidity = last(OutdoorHumidity),
-        IndoorHumidity = last(IndoorHumidity),
-        Rain = sum(InstantRain[length(InstantRain)-12:length(InstantRain)])
-      ) %>%
-      select(-InstantRain,-TotalRain) %>%
-      unique()
-  })
-  
-  output$CurrentConditions2 = renderTable({
-    
-    currentconditions = recent_data()[,colnames(df_local)] %>%
-      select(WindSpeed,WindGust,WindDirection,AQI) %>%
-      mutate(
-        Wind = mean(WindSpeed[n()-12:n()], na.rm = T),
-        WindGusts = max(WindGust[n()-12:n()]),
-        WindDirection = mean(WindDirection[n()-12:n()], na.rm = T),
-        AQI = mean(AQI[n()-12:n()], na.rm = T)
-      ) %>%
-      select(-WindSpeed,-WindGust) %>%
-      unique()
-  })
-  
-  output$CC1 = renderText({
-    last_temp = recent_data()[,c('ID','OutdoorTemperature')] %>%
-      filter(ID == last(ID)) 
-    print(last_temp$OutdoorTemperature)
-    paste('Current Temperature is ', last_temp$OutdoorTemperature,
-          ' C/',last_temp$OutdoorTemperature*1.8+32,'F', sep = '')
-    
-  })
   # Current Conditions ####
+  
+  # output$CurrentConditions1 = renderTable({
+  #   
+  #   
+  #   currentconditions = recent_data()[,colnames(df_local)] %>%
+  #     select(TotalRain,OutdoorTemperature,IndoorTemperature,OutdoorHumidity,IndoorHumidity) %>%
+  #     mutate(
+  #       InstantRain = c(0,diff(TotalRain)),
+  #       OutdoorTemperature = last(OutdoorTemperature),
+  #       IndoorTemperature = last(IndoorTemperature),
+  #       OutdoorHumidity = last(OutdoorHumidity),
+  #       IndoorHumidity = last(IndoorHumidity),
+  #       Rain = sum(InstantRain[length(InstantRain)-12:length(InstantRain)])
+  #     ) %>%
+  #     select(-InstantRain,-TotalRain) %>%
+  #     unique()
+  # })
+  # 
+  # output$CurrentConditions2 = renderTable({
+  #   
+  #   currentconditions = recent_data()[,colnames(df_local)] %>%
+  #     select(WindSpeed,WindGust,WindDirection,AQI) %>%
+  #     mutate(
+  #       Wind = mean(WindSpeed[n()-12:n()], na.rm = T),
+  #       WindGusts = max(WindGust[n()-12:n()]),
+  #       WindDirection = mean(WindDirection[n()-12:n()], na.rm = T),
+  #       AQI = mean(AQI[n()-12:n()], na.rm = T)
+  #     ) %>%
+  #     select(-WindSpeed,-WindGust) %>%
+  #     unique()
+  # })
+  # 
+  # output$CC1 = renderText({
+  #   last_temp = recent_data()[,c('ID','OutdoorTemperature')] %>%
+  #     filter(ID == last(ID)) 
+  #   print(last_temp$OutdoorTemperature)
+  #   paste('Current Temperature is ', last_temp$OutdoorTemperature,
+  #         ' C/',last_temp$OutdoorTemperature*1.8+32,'F', sep = '')
+  #   
+  # })
   
   output$CurrentHeader = renderText({
     paste0('Current Conditions:')
@@ -1889,16 +2052,50 @@ server <- function(input, output,session) {
       select(InstantRain, AQI) %>%
       mutate(
         `Last Hour of Rainfall` = sum(InstantRain[(length(InstantRain)-12):length(InstantRain)]),
+        # `Last Hour of Rainfall` = case_when(
+        #   input$rain_correct == T ~ sum(InstantRain[(length(InstantRain)-12):length(InstantRain)]*rain_corr),
+        #   T ~ sum(InstantRain[(length(InstantRain)-12):length(InstantRain)])
+        #),
         `Mean AQI of Past Hour` = round(mean(AQI[(n()-12):n()], na.rm = T),0)
       ) %>%
       select(`Last Hour of Rainfall`, `Mean AQI of Past Hour`) %>%
-      unique()
+      unique() %>%
+      mutate(
+        `Last Hour of Rainfall` = case_when(
+          input$rain_correct == T ~ `Last Hour of Rainfall`*rain_corr,
+          T ~ `Last Hour of Rainfall`
+        )
+      )
   }, align = 'l')
   
   #picture ####
   output$farmpic = renderImage({
-    return(list(src = photo_directory, contentType = 'image/jpg',width = '90%',height = '150%'))
+    return(list(src = '/srv/shiny-server/WeatherDashboard/LatestImage.jpg', contentType = 'image/jpg',width = '90%',height = '150%'))
   },deleteFile = F)
+  
+  gif_generate = eventReactive(input$gif, {
+    # print(getwd())
+    # print(dir('../'))
+    # print(dir('../images'))
+    pics = dir('../images', pattern = '*.jpg')
+    pics_dir = dir('../images',pattern = '*.jpg', full.names = T)
+    # print(pics)
+    pic_dates = as.POSIXct(str_sub(pics, start = 12, end = -5L), format = '%Y-%m-%d-%H-%M-%S')
+    # print(pic_dates)
+    # tlp = which(pic_dates > as.POSIXct('2022-03-20 01:00:00 PDT'))
+    tlp = which(pic_dates > as.POSIXct(as.character(input$range[1]), tz = 'America/Los_Angeles') + 3600*(as.numeric(input$hourstart)) & 
+                  pic_dates < as.POSIXct(as.character(input$range[2]), tz = 'America/Los_Angeles') + 3600*as.numeric(input$hourend))
+    # print(tlp)
+    list.files = pics_dir[tlp] %>%
+      image_read() %>%
+      image_join() %>%
+      image_animate(fps = 2) %>%
+      image_write('../images/test.gif')
+  })
+  output$timelapse = renderImage({
+    gif_generate()
+    return(list(src = '../images/test.gif', width = '100%'))
+  }, deleteFile = F)
   
 }
 
