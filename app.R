@@ -259,13 +259,13 @@ server <- function(input, output,session) {
       plot(
         plot_df$OutdoorTemperature~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = expression('Temp ('*degree*'C)')
+        ylab = expression('Temp ('*degree*'C)'), type = 'b'
       )
       par(new = T)
       plot(
         plot_df$IndoorTemperature~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
+        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
       )
       if (input$high_low == TRUE) {
         
@@ -338,13 +338,13 @@ server <- function(input, output,session) {
       plot(
         plot_df$OutdoorTemperature~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = expression('Temp ('*degree*'C)')
+        ylab = expression('Temp ('*degree*'C)'), type = 'b'
       )
       par(new = T)
       plot(
         plot_df$IndoorTemperature~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
+        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
       )
       if (input$high_low == TRUE) {
         
@@ -417,13 +417,13 @@ server <- function(input, output,session) {
       plot(
         plot_df$OutdoorTemperature~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = expression('Temp ('*degree*'C)'), type = 'b'
+        ylab = expression('Temp ('*degree*'C)'), type = 'b', type = 'b'
       )
       par(new = T)
       plot(
         plot_df$IndoorTemperature~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
+        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b', type = 'b'
       )
       if (input$high_low == TRUE) {
         
@@ -496,13 +496,13 @@ server <- function(input, output,session) {
       plot(
         plot_df$OutdoorTemperature~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = expression('Temp ('*degree*'C)')
+        ylab = expression('Temp ('*degree*'C)'), type = 'b'
       )
       par(new = T)
       plot(
         plot_df$IndoorTemperature~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
+        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
       )
       if (input$high_low == TRUE) {
         
@@ -836,13 +836,13 @@ server <- function(input, output,session) {
       plot(
         plot_df$OutdoorHumidity~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = 'Relative %', xaxt = 'n'
+        ylab = 'Relative %', xaxt = 'n', type = 'b'
       )
       par(new = T)
       plot(
         plot_df$IndoorHumidity~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
+        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
       )
       if (input$high_low == TRUE) {
         
@@ -910,13 +910,13 @@ server <- function(input, output,session) {
       plot(
         plot_df$OutdoorHumidity~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = 'Relative %', xaxt = 'n'
+        ylab = 'Relative %', xaxt = 'n', type = 'b'
       )
       par(new = T)
       plot(
         plot_df$IndoorHumidity~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
+        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
       )
       if (input$high_low == TRUE) {
         
@@ -984,13 +984,13 @@ server <- function(input, output,session) {
       plot(
         plot_df$OutdoorHumidity~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = 'Relative %', xaxt = 'n', type = 'b'
+        ylab = 'Relative %', xaxt = 'n', type = 'b', type = 'b'
       )
       par(new = T)
       plot(
         plot_df$IndoorHumidity~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
+        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b', type = 'b'
       )
       if (input$high_low == TRUE) {
         
@@ -1058,13 +1058,13 @@ server <- function(input, output,session) {
       plot(
         plot_df$OutdoorHumidity~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = 'Relative %', xaxt = 'n'
+        ylab = 'Relative %', xaxt = 'n', type = 'b'
       )
       par(new = T)
       plot(
         plot_df$IndoorHumidity~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue'
+        xaxt = 'n', yaxt = 'n', ylab = '', col = 'blue', type = 'b'
       )
       if (input$high_low == TRUE) {
         
