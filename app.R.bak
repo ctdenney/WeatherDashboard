@@ -10,7 +10,7 @@ rain_corr = 1.255411
 
 Sys.setenv(tz = 'America/Los_Angeles')
 # print(getwd())
-credentials = read.csv('credentials.csv')
+credentials = read.csv('../credentials.csv')
 db_user = credentials[credentials$field == 'db_user',2]
 db_password = credentials[credentials$field == 'db_password',2]
 db_name = credentials[credentials$field == 'db_name',2]
