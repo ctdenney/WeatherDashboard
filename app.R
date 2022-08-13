@@ -1927,7 +1927,7 @@ server <- function(input, output,session) {
           OutdoorAbsHum = abs_hum(OutdoorHumidity,OutdoorTemperature),
           IndoorAbsHum = abs_hum(IndoorHumidity,IndoorTemperature),
         ) %>%
-        group_by(date, hour) %>%
+        group_by(date) %>%
         summarise(
           min_oah = min(OutdoorAbsHum), max_oah = max(OutdoorAbsHum), 
           min_iah = min(IndoorAbsHum), max_iah = max(IndoorAbsHum), 
@@ -1992,7 +1992,7 @@ server <- function(input, output,session) {
           OutdoorAbsHum = abs_hum(OutdoorHumidity,OutdoorTemperature),
           IndoorAbsHum = abs_hum(IndoorHumidity,IndoorTemperature),
         ) %>%
-        group_by(date, hour) %>%
+        group_by(week) %>%
         summarise(
           min_oah = min(OutdoorAbsHum), max_oah = max(OutdoorAbsHum), 
           min_iah = min(IndoorAbsHum), max_iah = max(IndoorAbsHum), 
@@ -2057,7 +2057,7 @@ server <- function(input, output,session) {
           OutdoorAbsHum = abs_hum(OutdoorHumidity,OutdoorTemperature),
           IndoorAbsHum = abs_hum(IndoorHumidity,IndoorTemperature),
         ) %>%
-        group_by(date, hour) %>%
+        group_by(month) %>%
         summarise(
           min_oah = min(OutdoorAbsHum), max_oah = max(OutdoorAbsHum), 
           min_iah = min(IndoorAbsHum), max_iah = max(IndoorAbsHum), 
