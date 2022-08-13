@@ -62,6 +62,13 @@ get_recent_data = function() {
   return(data)
 }
 
+abs_hum = function(rel_hum,temp_c) {
+  SVP = 6.11 * exp(((2500000)/461.52)*(1/273.15 - 1/(temp_c+273.15)))
+  WVP2 = rel_hum* SVP
+  ah = WVP2/(461.52*(temp_c+273.15))
+  return(ah*1000)
+}
+
 df_local = get_recent_data()
 
 # UI ####
@@ -1277,7 +1284,11 @@ server <- function(input, output,session) {
           hour = hour(ts_PST), date = date(ts_PST)
         ) %>%
         group_by(date, hour) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
+        summarise(
+          min_bar = min(BarometricPressure), max_bar = max(BarometricPressure),
+          ts_PST = first(ts_PST), 
+          BarometricPressure = mean(BarometricPressure)
+        ) %>%
         mutate(
           datetime = format(ts_PST, format = '%b-%d %H')
         ) %>%
@@ -1286,11 +1297,19 @@ server <- function(input, output,session) {
       plot(
         plot_df$BarometricPressure~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '',
-        ylab = 'cbar'
+        ylab = 'cbar', type ='b'
       )
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
       mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$BarometricPressure),1)))
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_bar, rev(plot_df$max_bar)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+      }
       
       if(input$smooth == T) {
         lines(
@@ -1317,7 +1336,11 @@ server <- function(input, output,session) {
           date = date(ts_PST)
         ) %>%
         group_by(date) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
+        summarise(
+          min_bar = min(BarometricPressure), max_bar = max(BarometricPressure),
+          ts_PST = first(ts_PST), 
+          BarometricPressure = mean(BarometricPressure)
+        ) %>%
         mutate(
           datetime = format(date, format = '%b-%d')
         ) %>%
@@ -1331,6 +1354,14 @@ server <- function(input, output,session) {
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
       mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$BarometricPressure),1)))
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_bar, rev(plot_df$max_bar)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+      }
       
       if(input$smooth == T) {
         lines(
@@ -1357,7 +1388,11 @@ server <- function(input, output,session) {
           week = week(ts_PST), year = year(ts_PST)
         ) %>%
         group_by(year, week) %>%
-        summarise(BarometricPressure = mean(BarometricPressure, na.rm = T), ts_PST = first(ts_PST)) %>%
+        summarise(
+          min_bar = min(BarometricPressure), max_bar = max(BarometricPressure),
+          ts_PST = first(ts_PST), 
+          BarometricPressure = mean(BarometricPressure)
+        ) %>%
         mutate(
           year_week = paste(year, week)
         ) %>%
@@ -1371,6 +1406,14 @@ server <- function(input, output,session) {
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
       mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$BarometricPressure),1)))
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_bar, rev(plot_df$max_bar)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+      }
       
       if(input$smooth == T) {
         lines(
@@ -1397,7 +1440,11 @@ server <- function(input, output,session) {
           month = month(ts_PST), year = year(ts_PST)
         ) %>%
         group_by(year, month) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
+        summarise(
+          min_bar = min(BarometricPressure), max_bar = max(BarometricPressure),
+          ts_PST = first(ts_PST), 
+          BarometricPressure = mean(BarometricPressure)
+        ) %>%
         data.frame()
       
       plot(
@@ -1408,6 +1455,14 @@ server <- function(input, output,session) {
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
       mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$BarometricPressure),1)))
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_bar, rev(plot_df$max_bar)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+      }
       
       if(input$smooth == T) {
         lines(
@@ -1745,18 +1800,22 @@ server <- function(input, output,session) {
   })
   
   
-  # AQI Plot ####
+  # Absolute Humidity Plot ####
   
   output$AQIPlot <- renderPlot({
     
-    plot_df = recent_data()[,c('ts_PST','AQI','AQI24Average')] %>%
+    plot_df = recent_data()[,c('ts_PST','OutdoorTemperature','IndoorTemperature', 'OutdoorHumidity','IndoorHumidity')] %>%
       filter(
         ts_PST >as.POSIXct(as.character(input$range[1]), tz = 'America/Los_Angeles') + 3600*(as.numeric(input$hourstart)),
         ts_PST < as.POSIXct(as.character(input$range[2]), tz = 'America/Los_Angeles') + 3600*as.numeric(input$hourend)
       ) %>%
-      data.frame()
+      mutate(
+        OutdoorAbsHum = abs_hum(OutdoorHumidity,OutdoorTemperature),
+        IndoorAbsHum = abs_hum(IndoorHumidity,IndoorTemperature)
+      )
+    data.frame()
     
-    ylim_set = range(plot_df[,c('AQI','AQI24Average')]) * c(1,1.1)
+    ylim_set = range(plot_df[,c('OutdoorAbsHum','IndoorAbsHum')]) * c(1,1.1)
     
     par(mar = c(6, 4.1, 4, 4))
     
@@ -1765,20 +1824,24 @@ server <- function(input, output,session) {
     if(input$resolution == '5 minutes') {
       
       plot(
-        plot_df$AQI~plot_df$ts_PST,
+        plot_df$OutdoorAbsHum~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = 'AQI'
+        ylab = 'Absolute Humidity (g/m^3)'
       )
-      mtext(side = 3, line = 2, text = 'Air Quality Index', cex = 1.5)
+      points(
+        plot_df$IndoorAbsHum ~ plot_df$ts_PST,
+        col = 'blue', pch = 19
+      )
+      mtext(side = 3, line = 2, text = 'Total Water Moisture', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$AQI),1), round(last(plot_df$AQI24Average),1), sep = ','))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$OutdoorAbsHum),1), round(last(plot_df$IndoorAbsHum),1), sep = ','))
       
       if(input$smooth == T) {
         lines(
           smooth.spline(
             x = plot_df[,'ts_PST'],
-            y = plot_df[,'AQI'],
+            y = plot_df[,'OutdoorAbsHum'],
             df = max(round(nrow(plot_df)*input$smoothness,0),2)
           ),
           col = 'red', lwd = 2
@@ -1789,35 +1852,60 @@ server <- function(input, output,session) {
       
     } else if (input$resolution == 'Hourly') {
       
-      plot_df = recent_data()[,c('ts_PST','AQI','AQI24Average')] %>%
+      plot_df = recent_data()[,c('ts_PST','OutdoorTemperature','IndoorTemperature', 'OutdoorHumidity','IndoorHumidity')] %>%
         filter(
           ts_PST >as.POSIXct(as.character(input$range[1]), tz = 'America/Los_Angeles') + 3600*(as.numeric(input$hourstart)),
           ts_PST < as.POSIXct(as.character(input$range[2]), tz = 'America/Los_Angeles') + 3600*as.numeric(input$hourend)
         ) %>%
         mutate(
-          hour = hour(ts_PST), date = date(ts_PST)
+          hour = hour(ts_PST), date = date(ts_PST),
+          OutdoorAbsHum = abs_hum(OutdoorHumidity,OutdoorTemperature),
+          IndoorAbsHum = abs_hum(IndoorHumidity,IndoorTemperature),
         ) %>%
         group_by(date, hour) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
+        summarise(
+          min_oah = min(OutdoorAbsHum), max_oah = max(OutdoorAbsHum), 
+          min_iah = min(IndoorAbsHum), max_iah = max(IndoorAbsHum), 
+          OutdoorAbsHum = mean(OutdoorAbsHum),
+          IndoorAbsHum = mean(IndoorAbsHum),
+          ts_PST = first(ts_PST)
+        ) %>%
         data.frame()
       
-      ylim_set = range(plot_df[,c('AQI','AQI24Average')])
+      ylim_set = range(plot_df[,c('OutdoorAbsHum','IndoorAbsHum')])
       
       plot(
-        plot_df$AQI~plot_df$ts_PST,
+        plot_df$OutdoorAbsHum~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = 'AQI'
+        ylab = 'Absolute Humidity (g/m^3)', type = 'b'
+      )
+      lines(
+        plot_df$IndoorAbsHum ~ plot_df$ts_PST,
+        col = 'blue', pch = 19, type = 'b'
       )
       mtext(side = 3, line = 2, text = 'Mean Hourly Air Quality Index', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2, format = '%a %H')
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_oah, rev(plot_df$max_oah)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_iah, rev(plot_df$max_iah)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
+        )
+      }
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste('OT: ',round(last(plot_df$AQI),1),', IT: ', round(last(plot_df$AQI24Average),1), sep = ''))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste('OT: ',round(last(plot_df$OutdoorAbsHum),1),', IT: ', round(last(plot_df$IndoorAbsHum),1), sep = ''))
       
       if(input$smooth == T) {
         lines(
           smooth.spline(
             x = plot_df[,'ts_PST'],
-            y = plot_df[,'AQI'],
+            y = plot_df[,'OutdoorAbsHum'],
             df = max(round(nrow(plot_df)*input$smoothness,0),2)
           ),
           col = 'red', lwd = 2
@@ -1829,38 +1917,60 @@ server <- function(input, output,session) {
       
     } else if (input$resolution == 'Daily') {
       
-      plot_df = recent_data()[,c('ts_PST','AQI','AQI24Average')] %>%
+      plot_df = recent_data()[,c('ts_PST','OutdoorTemperature','IndoorTemperature', 'OutdoorHumidity','IndoorHumidity')] %>%
         filter(
           ts_PST >as.POSIXct(as.character(input$range[1]), tz = 'America/Los_Angeles') + 3600*(as.numeric(input$hourstart)),
           ts_PST < as.POSIXct(as.character(input$range[2]), tz = 'America/Los_Angeles') + 3600*as.numeric(input$hourend)
         ) %>%
         mutate(
-          date = date(ts_PST)
+          date = date(ts_PST),
+          OutdoorAbsHum = abs_hum(OutdoorHumidity,OutdoorTemperature),
+          IndoorAbsHum = abs_hum(IndoorHumidity,IndoorTemperature),
         ) %>%
-        group_by(date) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
-        mutate(
-          datetime = format(date, format = '%b-%d')
+        group_by(date, hour) %>%
+        summarise(
+          min_oah = min(OutdoorAbsHum), max_oah = max(OutdoorAbsHum), 
+          min_iah = min(IndoorAbsHum), max_iah = max(IndoorAbsHum), 
+          OutdoorAbsHum = mean(OutdoorAbsHum),
+          IndoorAbsHum = mean(IndoorAbsHum),
+          ts_PST = first(ts_PST)
         ) %>%
         data.frame()
       
-      ylim_set = range(plot_df[,c('AQI','AQI24Average')])
+      ylim_set = range(plot_df[,c('OutdoorAbsHum','IndoorAbsHum')])
       
       plot(
-        plot_df$AQI~plot_df$ts_PST,
+        plot_df$OutdoorAbsHum~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = 'AQI', type = 'b'
+        ylab = 'Absolute Humidity (g/m^3)', type = 'b'
+      )
+      lines(
+        plot_df$IndoorAbsHum ~ plot_df$ts_PST,
+        col = 'blue', pch = 19, type = 'b'
       )
       mtext(side = 3, line = 2, text = 'Mean Daily Air Quality Index', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste('OT: ',round(last(plot_df$AQI),1),', IT: ', round(last(plot_df$AQI24Average),1), sep = ''))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste('OT: ',round(last(plot_df$OutdoorAbsHum),1),', IT: ', round(last(plot_df$IndoorAbsHum),1), sep = ''))
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_oah, rev(plot_df$max_oah)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_iah, rev(plot_df$max_iah)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
+        )
+      }
       
       if(input$smooth == T) {
         lines(
           smooth.spline(
             x = plot_df[,'ts_PST'],
-            y = plot_df[,'AQI'],
+            y = plot_df[,'OutdoorAbsHum'],
             df = max(round(nrow(plot_df)*input$smoothness,0),2)
           ),
           col = 'red', lwd = 2
@@ -1872,36 +1982,60 @@ server <- function(input, output,session) {
       
     } else if (input$resolution == 'Weekly') {
       
-      plot_df = recent_data()[,c('ts_PST','AQI','AQI24Average')] %>%
+      plot_df = recent_data()[,c('ts_PST','OutdoorTemperature','IndoorTemperature', 'OutdoorHumidity','IndoorHumidity')] %>%
         filter(
           ts_PST >as.POSIXct(as.character(input$range[1]), tz = 'America/Los_Angeles') + 3600*(as.numeric(input$hourstart)),
           ts_PST < as.POSIXct(as.character(input$range[2]), tz = 'America/Los_Angeles') + 3600*as.numeric(input$hourend)
         ) %>%
         mutate(
-          week = week(ts_PST), year = year(ts_PST)
+          week = week(ts_PST), year = year(ts_PST),
+          OutdoorAbsHum = abs_hum(OutdoorHumidity,OutdoorTemperature),
+          IndoorAbsHum = abs_hum(IndoorHumidity,IndoorTemperature),
         ) %>%
-        group_by(year, week) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
-        mutate()
-      data.frame()
+        group_by(date, hour) %>%
+        summarise(
+          min_oah = min(OutdoorAbsHum), max_oah = max(OutdoorAbsHum), 
+          min_iah = min(IndoorAbsHum), max_iah = max(IndoorAbsHum), 
+          OutdoorAbsHum = mean(OutdoorAbsHum),
+          IndoorAbsHum = mean(IndoorAbsHum),
+          ts_PST = first(ts_PST)
+        ) %>%
+        data.frame()
       
-      ylim_set = range(plot_df[,c('AQI','AQI24Average')])
+      ylim_set = range(plot_df[,c('OutdoorAbsHum','IndoorAbsHum')])
       
       plot(
-        plot_df$AQI~plot_df$ts_PST,
+        plot_df$OutdoorAbsHum~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = 'AQI', type = 'b'
+        ylab = 'Absolute Humidity (g/m^3)', type = 'b'
+      )
+      lines(
+        plot_df$IndoorAbsHum ~ plot_df$ts_PST,
+        col = 'blue', pch = 19, type = 'b'
       )
       mtext(side = 3, line = 2, text = 'Mean Weekly Air Quality Index', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste('OT: ',round(last(plot_df$AQI),1),', IT: ', round(last(plot_df$AQI24Average),1), sep = ''))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste('OT: ',round(last(plot_df$OutdoorAbsHum),1),', IT: ', round(last(plot_df$IndoorAbsHum),1), sep = ''))
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_oah, rev(plot_df$max_oah)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_iah, rev(plot_df$max_iah)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
+        )
+      }
       
       if(input$smooth == T) {
         lines(
           smooth.spline(
             x = plot_df[,'ts_PST'],
-            y = plot_df[,'AQI'],
+            y = plot_df[,'OutdoorAbsHum'],
             df = max(round(nrow(plot_df)*input$smoothness,0),2)
           ),
           col = 'red', lwd = 2
@@ -1913,37 +2047,59 @@ server <- function(input, output,session) {
       
     } else if (input$resolution == 'Monthly') {
       
-      plot_df = recent_data()[,c('ts_PST','AQI','AQI24Average')] %>%
+      plot_df = recent_data()[,c('ts_PST','OutdoorTemperature','IndoorTemperature', 'OutdoorHumidity','IndoorHumidity')] %>%
         filter(
           ts_PST >as.POSIXct(as.character(input$range[1]), tz = 'America/Los_Angeles') + 3600*(as.numeric(input$hourstart)),
           ts_PST < as.POSIXct(as.character(input$range[2]), tz = 'America/Los_Angeles') + 3600*as.numeric(input$hourend)
         ) %>%
         mutate(
-          month = month(ts_PST), year = year(ts_PST)
+          month = month(ts_PST), year = year(ts_PST),
+          OutdoorAbsHum = abs_hum(OutdoorHumidity,OutdoorTemperature),
+          IndoorAbsHum = abs_hum(IndoorHumidity,IndoorTemperature),
         ) %>%
-        group_by(year, month) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
-        mutate(
-          date = format(ts_PST, format = '%Y %b')
+        group_by(date, hour) %>%
+        summarise(
+          min_oah = min(OutdoorAbsHum), max_oah = max(OutdoorAbsHum), 
+          min_iah = min(IndoorAbsHum), max_iah = max(IndoorAbsHum), 
+          OutdoorAbsHum = mean(OutdoorAbsHum),
+          IndoorAbsHum = mean(IndoorAbsHum),
+          ts_PST = first(ts_PST)
         ) %>%
         data.frame()
       
-      ylim_set = range(plot_df[,c('AQI','AQI24Average')])
+      ylim_set = range(plot_df[,c('OutdoorAbsHum','IndoorAbsHum')])
       plot(
-        plot_df$AQI~plot_df$ts_PST,
+        plot_df$OutdoorAbsHum~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
-        ylab = 'AQI', type = 'b'
+        ylab = 'Absolute Humidity (g/m^3)', type = 'b'
+      )
+      lines(
+        plot_df$IndoorAbsHum ~ plot_df$ts_PST,
+        col = 'blue', pch = 19, type = 'b'
       )
       mtext(side = 3, line = 2, text = 'Mean Monthly Air Quality Index', cex = 1.5)
       axis.POSIXct(x = plot_df$datetime,side = 1, las = 2)
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste('OT: ',round(last(plot_df$AQI),1),', IT: ', round(last(plot_df$AQI24Average),1), sep = ''))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste('OT: ',round(last(plot_df$OutdoorAbsHum),1),', IT: ', round(last(plot_df$IndoorAbsHum),1), sep = ''))
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_oah, rev(plot_df$max_oah)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_iah, rev(plot_df$max_iah)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
+        )
+      }
       
       if(input$smooth == T) {
         lines(
           smooth.spline(
             x = plot_df[,'ts_PST'],
-            y = plot_df[,'AQI'],
+            y = plot_df[,'OutdoorAbsHum'],
             df = max(round(nrow(plot_df)*input$smoothness,0),2)
           ),
           col = 'red', lwd = 2
