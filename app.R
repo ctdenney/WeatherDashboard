@@ -1883,7 +1883,7 @@ server <- function(input, output,session) {
         plot_df$IndoorAbsHum ~ plot_df$ts_PST,
         col = 'blue', pch = 19, type = 'b'
       )
-      mtext(side = 3, line = 2, text = 'Mean Hourly Air Quality Index', cex = 1.5)
+      mtext(side = 3, line = 2, text = 'Mean Hourly Absolute Humidity', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2, format = '%a %H')
       if (input$high_low == TRUE) {
         
@@ -1948,7 +1948,7 @@ server <- function(input, output,session) {
         plot_df$IndoorAbsHum ~ plot_df$ts_PST,
         col = 'blue', pch = 19, type = 'b'
       )
-      mtext(side = 3, line = 2, text = 'Mean Daily Air Quality Index', cex = 1.5)
+      mtext(side = 3, line = 2, text = 'Mean Daily Absolute Humidity', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
       
       mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste('OT: ',round(last(plot_df$OutdoorAbsHum),1),', IT: ', round(last(plot_df$IndoorAbsHum),1), sep = ''))
@@ -2013,7 +2013,7 @@ server <- function(input, output,session) {
         plot_df$IndoorAbsHum ~ plot_df$ts_PST,
         col = 'blue', pch = 19, type = 'b'
       )
-      mtext(side = 3, line = 2, text = 'Mean Weekly Air Quality Index', cex = 1.5)
+      mtext(side = 3, line = 2, text = 'Mean Weekly Absolute Humidity', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
       
       mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste('OT: ',round(last(plot_df$OutdoorAbsHum),1),', IT: ', round(last(plot_df$IndoorAbsHum),1), sep = ''))
@@ -2077,7 +2077,7 @@ server <- function(input, output,session) {
         plot_df$IndoorAbsHum ~ plot_df$ts_PST,
         col = 'blue', pch = 19, type = 'b'
       )
-      mtext(side = 3, line = 2, text = 'Mean Monthly Air Quality Index', cex = 1.5)
+      mtext(side = 3, line = 2, text = 'Mean Monthly Absolute Humidity', cex = 1.5)
       axis.POSIXct(x = plot_df$datetime,side = 1, las = 2)
       
       mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste('OT: ',round(last(plot_df$OutdoorAbsHum),1),', IT: ', round(last(plot_df$IndoorAbsHum),1), sep = ''))
