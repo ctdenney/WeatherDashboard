@@ -1872,7 +1872,7 @@ server <- function(input, output,session) {
         ) %>%
         data.frame()
       
-      ylim_set = range(plot_df[,c('OutdoorAbsHum','IndoorAbsHum')])
+      ylim_set = range(plot_df[,c('min_oah','min_iah', 'max_oah','max_iah')])
       
       plot(
         plot_df$OutdoorAbsHum~plot_df$ts_PST,
@@ -1937,7 +1937,7 @@ server <- function(input, output,session) {
         ) %>%
         data.frame()
       
-      ylim_set = range(plot_df[,c('OutdoorAbsHum','IndoorAbsHum')])
+      ylim_set = range(plot_df[,c('min_oah','min_iah', 'max_oah','max_iah')])
       
       plot(
         plot_df$OutdoorAbsHum~plot_df$ts_PST,
@@ -2002,7 +2002,7 @@ server <- function(input, output,session) {
         ) %>%
         data.frame()
       
-      ylim_set = range(plot_df[,c('OutdoorAbsHum','IndoorAbsHum')])
+      ylim_set = range(plot_df[,c('min_oah','min_iah', 'max_oah','max_iah')])
       
       plot(
         plot_df$OutdoorAbsHum~plot_df$ts_PST,
@@ -2067,7 +2067,7 @@ server <- function(input, output,session) {
         ) %>%
         data.frame()
       
-      ylim_set = range(plot_df[,c('OutdoorAbsHum','IndoorAbsHum')])
+      ylim_set = range(plot_df[,c('min_oah','min_iah', 'max_oah','max_iah')])
       plot(
         plot_df$OutdoorAbsHum~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '', ylim = ylim_set,
