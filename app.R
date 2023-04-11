@@ -32,7 +32,7 @@ get_recent_data = function() {
   data = df %>%
     filter(
       ID>6,
-      SerialNumber %in% c(116,236)
+      SerialNumber %in% c(116,236, 72, 252)
     ) %>%
     mutate(
       ts_GMT = force_tz(as_datetime(TimeStamp), tzone = 'GMT'),
