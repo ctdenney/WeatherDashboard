@@ -40,7 +40,7 @@ get_recent_data = function() {
       TotalRain = case_when(
         ID <= 676 ~ 0,
         ID >= 37254 & ID <=37269 & TotalRain != 355.8 ~ TotalRain + 355.8,
-        ID > 37269 ~ TotalRain + 355.8,
+        ID > 37269 & ID <= 114820 ~ TotalRain + 355.8,
         ID > 114820 ~ TotalRain + 681,
         T ~ TotalRain
       ),
