@@ -32,7 +32,7 @@ get_recent_data = function() {
   data = df %>%
     filter(
       ID>6,
-      SerialNumber %in% c(116,236)
+      SerialNumber %in% c(116,236, 72, 252)
     ) %>%
     mutate(
       ts_GMT = force_tz(as_datetime(TimeStamp), tzone = 'GMT'),
@@ -40,7 +40,8 @@ get_recent_data = function() {
       TotalRain = case_when(
         ID <= 676 ~ 0,
         ID >= 37254 & ID <=37269 & TotalRain != 355.8 ~ TotalRain + 355.8,
-        ID > 37269 ~ TotalRain + 355.8,
+        ID > 37269 & ID <= 114820 ~ TotalRain + 355.8,
+        ID > 114820 ~ TotalRain + 681,
         T ~ TotalRain
       ),
       InstantRain = c(0,diff(TotalRain)),
