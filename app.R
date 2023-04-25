@@ -1542,12 +1542,11 @@ server <- function(input, output,session) {
           date = date(ts_PST), hour = hour(ts_PST)
         ) %>%
         group_by(date, hour) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
         summarise(
           #g for gust, w for sustained wind
           min_g = min(WindGust), max_g = max(WindGust), 
           min_w = min(WindSpeed), max_w = max(WindSpeed),
-          WindGust = mean(WindGust), windSpeed = mean(WindSpeed),
+          WindGust = mean(WindGust), WindSpeed = mean(WindSpeed),
           ts_PST = first(ts_PST)
         ) %>%
         data.frame()
@@ -1613,7 +1612,13 @@ server <- function(input, output,session) {
           date = date(ts_PST)
         ) %>%
         group_by(date) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
+        summarise(
+          #g for gust, w for sustained wind
+          min_g = min(WindGust), max_g = max(WindGust), 
+          min_w = min(WindSpeed), max_w = max(WindSpeed),
+          WindGust = mean(WindGust), WindSpeed = mean(WindSpeed),
+          ts_PST = first(ts_PST)
+        ) %>%
         data.frame()
       
       ylim_set = range(plot_df[,c('WindSpeed','WindGust')])
@@ -1679,7 +1684,13 @@ server <- function(input, output,session) {
           year = year(ts_PST), week = week(ts_PST)
         ) %>%
         group_by(year, week) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
+        summarise(
+          #g for gust, w for sustained wind
+          min_g = min(WindGust), max_g = max(WindGust), 
+          min_w = min(WindSpeed), max_w = max(WindSpeed),
+          WindGust = mean(WindGust), WindSpeed = mean(WindSpeed),
+          ts_PST = first(ts_PST)
+        ) %>%
         data.frame()
       
       ylim_set = range(plot_df[,c('WindSpeed','WindGust')])
@@ -1745,7 +1756,13 @@ server <- function(input, output,session) {
           year = year(ts_PST), month = month(ts_PST)
         ) %>%
         group_by(year, month) %>%
-        summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
+        summarise(
+          #g for gust, w for sustained wind
+          min_g = min(WindGust), max_g = max(WindGust), 
+          min_w = min(WindSpeed), max_w = max(WindSpeed),
+          WindGust = mean(WindGust), WindSpeed = mean(WindSpeed),
+          ts_PST = first(ts_PST)
+        ) %>%
         data.frame()
       
       ylim_set = range(plot_df[,c('WindSpeed','WindGust')])
