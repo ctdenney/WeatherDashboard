@@ -1254,7 +1254,7 @@ server <- function(input, output,session) {
       plot(
         plot_df$BarometricPressure~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '',
-        ylab = 'cbar', ylim = c(98,102)
+        ylab = 'cbar', ylim = c(98,104)
       )
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -1298,7 +1298,7 @@ server <- function(input, output,session) {
       plot(
         plot_df$BarometricPressure~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '',
-        ylab = 'cbar', type ='b', ylim = c(98,102)
+        ylab = 'cbar', type ='b', ylim = c(98,104)
       )
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -1350,7 +1350,7 @@ server <- function(input, output,session) {
       plot(
         plot_df$BarometricPressure~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '',
-        ylab = 'cbar', type = 'b', ylim = c(98,102)
+        ylab = 'cbar', type = 'b', ylim = c(98,104)
       )
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -1402,7 +1402,7 @@ server <- function(input, output,session) {
       plot(
         plot_df$BarometricPressure~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '',
-        ylab = 'cbar', type = 'b', ylim = c(98,102)
+        ylab = 'cbar', type = 'b', ylim = c(98,104)
       )
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -1451,7 +1451,7 @@ server <- function(input, output,session) {
       plot(
         plot_df$BarometricPressure~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '',
-        ylab = 'cbar', type = 'b', ylim = c(98,102)
+        ylab = 'cbar', type = 'b', ylim = c(98,104)
       )
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -1514,8 +1514,8 @@ server <- function(input, output,session) {
         labels = axisTicks(ylim_set*2.2369, log = F)
       )
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1)))
-      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1)))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1), sep = ', '))
+      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1), sep = ', '))
       mtext(side = 4, line = 2, text = 'mph')
       
       if(input$smooth == T) {
@@ -1571,8 +1571,8 @@ server <- function(input, output,session) {
         labels = axisTicks(ylim_set*2.2369, log = F)
       )
       mtext(side = 4, line = 2, text = 'mph')
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1)))
-      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1)))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1), sep = ', '))
+      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1), sep = ', '))
       
       if(input$smooth == T) {
         lines(
@@ -1643,8 +1643,8 @@ server <- function(input, output,session) {
       )
       mtext(side = 4, line = 2, text = 'mph')
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1)))
-      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1)))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1), sep = ', '))
+      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1), sep = ', '))
       
       if(input$smooth == T) {
         lines(
@@ -1715,8 +1715,8 @@ server <- function(input, output,session) {
       )
       mtext(side = 4, line = 2, text = 'mph')
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1)))
-      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1)))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1), sep = ', '))
+      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1), sep = ', '))
       
       if(input$smooth == T) {
         lines(
@@ -1787,8 +1787,8 @@ server <- function(input, output,session) {
       )
       mtext(side = 4, line = 2, text = 'mph')
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1)))
-      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1)))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1), sep = ', '))
+      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1), sep = ', '))
       
       if(input$smooth == T) {
         lines(
