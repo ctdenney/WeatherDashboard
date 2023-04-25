@@ -1557,10 +1557,10 @@ server <- function(input, output,session) {
         plot_df$WindGust~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '',
         ylab = expression('m'^'-s'), ylim = ylim_set,
-        col = 'blue'
+        col = 'blue', type = 'b'
       )
       points(
-        plot_df$WindSpeed~plot_df$ts_PST, pch = 20
+        plot_df$WindSpeed~plot_df$ts_PST, pch = 20, type = 'b'
       )
       mtext(side = 3, line = 2, text = 'Wind', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -1621,7 +1621,7 @@ server <- function(input, output,session) {
         ) %>%
         data.frame()
       
-      ylim_set = range(plot_df[,c('WindSpeed','WindGust')])
+      ylim_set = range(plot_df[,c('min_w','max_g')])
       
       plot(
         plot_df$WindGust~plot_df$ts_PST,
@@ -1693,7 +1693,7 @@ server <- function(input, output,session) {
         ) %>%
         data.frame()
       
-      ylim_set = range(plot_df[,c('WindSpeed','WindGust')])
+      ylim_set = range(plot_df[,c('min_w','max_g')])
       
       plot(
         plot_df$WindGust~plot_df$ts_PST,
@@ -1765,7 +1765,7 @@ server <- function(input, output,session) {
         ) %>%
         data.frame()
       
-      ylim_set = range(plot_df[,c('WindSpeed','WindGust')])
+      ylim_set = range(plot_df[,c('min_w','max_g')])
       
       plot(
         plot_df$WindGust~plot_df$ts_PST,
