@@ -1253,7 +1253,7 @@ server <- function(input, output,session) {
       plot(
         plot_df$BarometricPressure~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '',
-        ylab = 'cbar'
+        ylab = 'cbar', ylim = c(98,102)
       )
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -1297,7 +1297,7 @@ server <- function(input, output,session) {
       plot(
         plot_df$BarometricPressure~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '',
-        ylab = 'cbar', type ='b'
+        ylab = 'cbar', type ='b', ylim = c(98,102)
       )
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -1349,7 +1349,7 @@ server <- function(input, output,session) {
       plot(
         plot_df$BarometricPressure~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '',
-        ylab = 'cbar', type = 'b'
+        ylab = 'cbar', type = 'b', ylim = c(98,102)
       )
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -1401,7 +1401,7 @@ server <- function(input, output,session) {
       plot(
         plot_df$BarometricPressure~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '',
-        ylab = 'cbar', type = 'b'
+        ylab = 'cbar', type = 'b', ylim = c(98,102)
       )
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -1450,7 +1450,7 @@ server <- function(input, output,session) {
       plot(
         plot_df$BarometricPressure~plot_df$ts_PST,
         las = 2, xaxt = 'n', pch = 20, cex = 1, xlab = '',
-        ylab = 'cbar', type = 'b'
+        ylab = 'cbar', type = 'b', ylim = c(98,102)
       )
       mtext(side = 3, line = 2, text = 'Barometric Pressure', cex = 1.5)
       axis.POSIXct(x = plot_df$ts_PST,side = 1, las = 2)
@@ -1513,8 +1513,8 @@ server <- function(input, output,session) {
         labels = axisTicks(ylim_set*2.2369, log = F)
       )
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1)))
-      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1)))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1)))
+      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1)))
       mtext(side = 4, line = 2, text = 'mph')
       
       if(input$smooth == T) {
@@ -1542,9 +1542,16 @@ server <- function(input, output,session) {
         ) %>%
         group_by(date, hour) %>%
         summarise(across(where(is.numeric), ~mean(.x, na.rm = T)), ts_PST = first(ts_PST)) %>%
+        summarise(
+          #g for gust, w for sustained wind
+          min_g = min(WindGust), max_g = max(WindGust), 
+          min_w = min(WindSpeed), max_w = max(WindSpeed),
+          WindGust = mean(WindGust), windSpeed = mean(WindSpeed),
+          ts_PST = first(ts_PST)
+        ) %>%
         data.frame()
       
-      ylim_set = range(plot_df[,c('WindSpeed','WindGust')])
+      ylim_set = range(plot_df[,c('min_w','max_g')])
       
       plot(
         plot_df$WindGust~plot_df$ts_PST,
@@ -1564,8 +1571,8 @@ server <- function(input, output,session) {
         labels = axisTicks(ylim_set*2.2369, log = F)
       )
       mtext(side = 4, line = 2, text = 'mph')
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1)))
-      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1)))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1)))
+      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1)))
       
       if(input$smooth == T) {
         lines(
@@ -1575,6 +1582,20 @@ server <- function(input, output,session) {
             df = max(round(nrow(plot_df)*input$smoothness,0),2)
           ),
           col = 'red', lwd = 2
+        )
+      }
+      
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_w, rev(plot_df$max_w)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_g, rev(plot_df$max_g)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
         )
       }
       
@@ -1616,8 +1637,8 @@ server <- function(input, output,session) {
       )
       mtext(side = 4, line = 2, text = 'mph')
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1)))
-      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1)))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1)))
+      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1)))
       
       if(input$smooth == T) {
         lines(
@@ -1627,6 +1648,20 @@ server <- function(input, output,session) {
             df = max(round(nrow(plot_df)*input$smoothness,0),2)
           ),
           col = 'red', lwd = 2
+        )
+      }
+      
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_w, rev(plot_df$max_w)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_g, rev(plot_df$max_g)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
         )
       }
       
@@ -1668,8 +1703,8 @@ server <- function(input, output,session) {
       )
       mtext(side = 4, line = 2, text = 'mph')
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1)))
-      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1)))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1)))
+      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1)))
       
       if(input$smooth == T) {
         lines(
@@ -1679,6 +1714,20 @@ server <- function(input, output,session) {
             df = max(round(nrow(plot_df)*input$smoothness,0),2)
           ),
           col = 'red', lwd = 2
+        )
+      }
+      
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_w, rev(plot_df$max_w)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_g, rev(plot_df$max_g)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
         )
       }
       
@@ -1720,8 +1769,8 @@ server <- function(input, output,session) {
       )
       mtext(side = 4, line = 2, text = 'mph')
       
-      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1)))
-      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1)))
+      mtext(side = 3, adj = 0, cex = 1.5,line = 0, text = paste(round(last(plot_df$WindSpeed),1), round(last(plot_df$WindSpeed*2.2369),1)))
+      mtext(side = 3, adj = 1, cex = 1.5, line = 0, text = paste(round(last(plot_df$WindGust),1), round(last(plot_df$WindGust*2.2369),1)))
       
       if(input$smooth == T) {
         lines(
@@ -1731,6 +1780,20 @@ server <- function(input, output,session) {
             df = max(round(nrow(plot_df)*input$smoothness,0),2)
           ),
           col = 'red', lwd = 2
+        )
+      }
+      
+      if (input$high_low == TRUE) {
+        
+        polygon(
+          y = c(plot_df$min_w, rev(plot_df$max_w)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('grey', alpha.f = 0.3)
+        )
+        polygon(
+          y = c(plot_df$min_g, rev(plot_df$max_g)),
+          x = c(plot_df$ts_PST, rev(plot_df$ts_PST)),
+          border = NA, col = adjustcolor('blue', alpha.f = 0.3)
         )
       }
     }
