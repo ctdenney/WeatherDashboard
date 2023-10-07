@@ -42,7 +42,9 @@ get_recent_data = function() {
         ID <= 676 ~ 0,
         ID >= 37254 & ID <=37269 & TotalRain != 355.8 ~ TotalRain + 355.8,
         ID > 37269 & ID <= 114820 ~ TotalRain + 355.8,
+        ID >= 88267 & ID <= 114820 ~ TotalRain + 596.7,
         ID > 114820 ~ TotalRain + 681,
+        ID > 166030 ~ TotalRain + 817.8
         T ~ TotalRain
       ),
       InstantRain = c(0,diff(TotalRain)),
