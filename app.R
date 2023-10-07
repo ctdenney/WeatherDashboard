@@ -32,7 +32,7 @@ get_recent_data = function() {
   data = df %>%
     filter(
       ID>6,
-      (SerialNumber %in% c(116,236, 72, 252) & ID < 166030),
+      (SerialNumber %in% c(116,236, 72, 252) & ID < 166030) |
       (SerialNumber %in% c(181) & ID >= 166030)
     ) %>%
     mutate(
